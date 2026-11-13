@@ -6,6 +6,8 @@ Maqueta navegable de un hub de **postmortem mensual** para varias campañas de c
 
 Es un único archivo HTML: no tiene dependencias, no necesita instalación y no se conecta a ningún servidor.
 
+**[Ver la demo en vivo](https://agonzalez-97.github.io/monthly-postmortem-demo/)**
+
 ![Hub de campañas en tema claro](docs/img/hub-claro.png)
 
 ## Qué muestra
