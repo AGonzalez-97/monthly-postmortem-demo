@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Postmortem mensual de campañas — Demo visual (datos ficticios)</title>
+<style>
+:root{
+  --f:Inter,"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;--fh:Manrope,Inter,"Segoe UI",system-ui,sans-serif;--fm:"JetBrains Mono",Consolas,"Courier New",monospace;
+  --bg:#F5F2EC;--sf:#FFFFFF;--sf2:#F3EFE6;--bd:#E1D9C9;--tx:#1A2436;--mu:#6B6459;--pr:#5B4FCF;--prh:#4A3FB5;--dg:#C0392B;--ok:#1E8E5A;--wn:#B7791F;--inf:#2E6FBF;--sel:#E7E3FB;
+  --sb:#0C1E3D;--sba:#5B4FCF;--sbt:#CBD3E8;--sbm:#7C88A8;--gbg:#DCFCE7;--gfg:#166534;--ybg:#FEF3C7;--yfg:#92400E;--rbg:#FEE2E2;--rfg:#991B1B;--nbg:#F3F4F6;--nfg:#6B7280;
+}
+[data-theme="dark"]{
+  --bg:#0E1526;--sf:#161F38;--sf2:#1C2744;--bd:#2B3A5E;--tx:#E7E9F2;--mu:#99A3BE;--pr:#8176E8;--prh:#9A90EF;--dg:#E0564A;--ok:#3CC48A;--wn:#F0B429;--inf:#6FA8FF;--sel:#2E2960;
+  --sb:#070D1C;--sba:#8176E8;--sbt:#CBD3E8;--sbm:#6E7FA3;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:13px/1.45 var(--f);background:var(--bg);color:var(--tx);overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+.mu{color:var(--mu)}.sm{font-size:11px}.b{font-weight:700}.mono{font-family:var(--fm)}
+#strip{height:28px;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,#5B4FCF,#0C9A82);color:#fff;font-weight:600;font-size:12px;padding:0 10px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#app{display:grid;grid-template-columns:250px minmax(0,1fr);height:calc(100vh - 28px)}
+#sb{background:var(--sb);color:var(--sbt);display:flex;flex-direction:column;padding:20px 12px 14px;gap:2px;overflow:auto;min-height:0}
+.brand{padding:2px 10px 16px}.brand .t{font:800 21px var(--fh);color:#fff;letter-spacing:.2px}.brand .s{font-size:11px;color:var(--sbm);margin-top:2px}
+.cap{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--sbm);padding:14px 12px 4px;text-transform:uppercase}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;cursor:pointer;font-size:13px;user-select:none;color:var(--sbt)}
+.ni:hover{background:rgba(255,255,255,.08)}.ni.on{background:var(--sba);color:#fff;font-weight:700}
+.ni .ic{width:18px;text-align:center}.ni .ic:empty{display:none}
+.sbf{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding:12px 6px 0}
+.sbf button{background:transparent;border:1px solid rgba(255,255,255,.25);color:var(--sbt);padding:7px 10px;border-radius:7px;cursor:pointer;text-align:left}
+.sbf button:hover{background:rgba(255,255,255,.08)}.sbf .v{font-size:11px;color:var(--sbm);padding-left:4px}
+#ct{overflow:auto;padding:26px 28px 36px;min-width:0;position:relative}
+h1.pg{font:800 24px var(--fh);margin:0 0 2px}h2.sh{font:800 15px var(--fh);margin:0}
+.sub{color:var(--mu);margin:0 0 16px}
+.cd{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px}
+.chd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.btn{background:var(--sf);border:1px solid var(--bd);padding:7px 14px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.btn:hover:not(:disabled){background:var(--sf2)}
+.btn.p{background:var(--pr);border-color:var(--pr);color:#fff;font-weight:700}.btn.p:hover:not(:disabled){background:var(--prh)}
+.btn.d{border-color:var(--dg);color:var(--dg)}
+.btn:disabled{opacity:.45;cursor:not-allowed}.btn.s{padding:3px 10px;font-size:11px}
+.gb{border:1px solid var(--bd);background:var(--sf2);padding:3px 11px;border-radius:999px;font-size:11px;cursor:pointer;color:var(--mu)}
+.gb.on{background:var(--sel);color:var(--pr);border-color:var(--pr);font-weight:700}
+.tile{border:1px solid var(--bd);border-radius:8px;padding:5px 14px;cursor:pointer;min-width:130px;background:var(--sf)}
+.tile .n{font:800 19px var(--fh);line-height:1.1}.tile .l{font-size:11px;color:var(--mu)}
+.tile.pe .n{color:var(--dg)}.tile.en .n{color:var(--ok)}.tile.on{outline:2px solid var(--pr);outline-offset:-1px}
+.ck{display:inline-flex;align-items:center;gap:6px;cursor:pointer;margin-right:14px}
+.fld{display:flex;align-items:center;gap:8px}
+select,input[type=text],input[type=password],input[type=number],textarea{background:var(--sf);border:1px solid var(--bd);padding:6px 9px;border-radius:7px;min-width:0}
+textarea{width:100%;min-height:70px;resize:vertical}
+.cg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding-top:6px}
+.cc{border:1px solid var(--bd);border-radius:10px;background:var(--sf);display:flex;flex-direction:column;position:relative}
+.cc.on{border-color:var(--pr);outline:2px solid var(--pr);outline-offset:-1px;background:var(--sel)}
+.idn{cursor:pointer;border-radius:10px 10px 0 0}
+.bn{height:56px;background:#fff;display:flex;align-items:center;justify-content:center;border-radius:10px 10px 0 0;position:relative}
+.logo{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font:800 15px var(--fh)}
+.dot{position:absolute;left:50%;bottom:-8px;width:16px;height:16px;border-radius:50%;transform:translateX(-50%);border:2px solid var(--sf);z-index:2}
+.dot.g{background:var(--ok)}.dot.y{background:#F0B429}.dot.r{background:var(--dg)}.dot.n{background:#9AA0AA}
+.dot.b{animation:blk 1.1s steps(1) infinite}
+@keyframes blk{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.dot.b{animation:none}}
+.nm{height:2.9em;text-align:center;font:800 14px/1.2 var(--fh);padding:14px 8px 0}
+.pl{text-align:center;color:var(--mu);font-size:11px;margin-bottom:6px}
+.cb{padding:6px 12px 12px;display:flex;flex-direction:column;gap:6px;font-size:12px}
+.kv{display:flex;justify-content:space-between;gap:6px}.kv b{font-weight:700}
+.wl{display:flex;gap:2px;justify-content:space-between}
+.wl span{flex:1;text-align:center;font-weight:700;border-radius:4px;padding:1px 0;font-size:11px;cursor:default}
+.w1{background:var(--sel);color:var(--pr)}.w0{color:var(--mu);opacity:.55}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--sf);padding:3px 9px;font-size:11px;cursor:pointer;border-right:1px solid var(--bd)}
+.seg button:last-child{border-right:0}.seg button.on{background:var(--pr);color:#fff;font-weight:700}.seg button:disabled{opacity:.4;cursor:not-allowed}
+.rb{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;min-height:20px}
+.rb.run{background:var(--ybg);color:var(--yfg)}.rb.ok{background:var(--gbg);color:var(--gfg)}.rb.er{background:var(--rbg);color:var(--rfg)}.rb.st{background:var(--ybg);color:var(--yfg)}
+.tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--bd);margin-bottom:12px}
+.tabs button{padding:8px 16px;border:0;border-bottom:3px solid transparent;background:transparent;cursor:pointer;color:var(--mu);font-weight:600}
+.tabs button.on{color:var(--pr);border-bottom-color:var(--pr)}
+.tw{overflow:auto;max-width:100%;border:1px solid var(--bd);border-radius:8px}
+table.xt{border-collapse:collapse;font-size:11px;white-space:nowrap}
+table.xt th,table.xt td{border:1px solid var(--bd);padding:3px 8px;text-align:right}
+table.xt th{background:var(--sf2);font-weight:700;text-align:center;position:sticky;top:0;z-index:2}
+table.xt tr.band th{background:var(--pr);color:#fff;top:0}
+table.xt tr.cols th{top:24px}
+table.xt td.c1,table.xt th.c1{position:sticky;left:0;z-index:1;background:var(--sf2);text-align:left;min-width:84px}
+table.xt td.c2,table.xt th.c2{position:sticky;left:84px;z-index:1;background:var(--sf2);text-align:left;min-width:110px}
+table.xt th.c1,table.xt th.c2{z-index:3}
+td.g{background:var(--gbg);color:var(--gfg)}td.y{background:var(--ybg);color:var(--yfg)}td.r{background:var(--rbg);color:var(--rfg)}
+table.fm{border-collapse:collapse;width:100%}table.fm th,table.fm td{border-bottom:1px solid var(--bd);padding:7px 10px;text-align:left;vertical-align:top}
+table.fm th{color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+.ori{font-style:italic;font-weight:800}.ori.L{color:var(--inf)}.ori.I{color:var(--ok)}.ori.C{color:var(--wn)}.ori.O{color:var(--pr)}
+.frm{display:grid;grid-template-columns:230px minmax(0,460px);gap:10px 12px;align-items:center}
+.frm input[type=text],.frm input[type=password],.frm input[type=number],.frm select{width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.help{font-size:11px;color:var(--mu);margin:4px 0 8px}
+.tb{width:760px;max-width:100%;border:1px solid var(--bd);padding:14px;font-family:var(--f)}
+.tb h3{margin:0;font:800 18px var(--fh)}.tb .ts{font-size:11px;margin-bottom:10px}
+.tb .kc{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:10px}
+.tb .k{border-radius:4px;padding:6px 8px}.tb .k .l{font-size:10px;opacity:.85}.tb .k .v{font:800 16px var(--fh)}
+.tb table{border-collapse:collapse;width:100%;font-size:10.5px}.tb th,.tb td{padding:2px 6px;text-align:center}
+.tb th{color:#fff}
+.cl{border:2px solid var(--bd);border-radius:8px;margin-bottom:14px;overflow:hidden}.cl .cht{color:#fff;font-weight:700;padding:6px 12px}.cl .cli{display:flex;gap:10px;align-items:flex-start;padding:6px 12px;border-top:1px solid var(--bd)}
+.bdg{color:#fff;font-weight:700;font-size:10px;padding:1px 6px;min-width:84px;text-align:center;flex:none;border-radius:3px}
+.mail{border:1px solid var(--bd);border-radius:8px;padding:14px;background:var(--sf)}
+.mail .h{display:grid;grid-template-columns:70px 1fr;gap:3px 10px;margin-bottom:10px}
+#tip{position:fixed;z-index:80;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 11px;font-size:11px;max-width:300px;display:none;pointer-events:none}
+#tip .tt{font-weight:800;margin:6px 0 2px;color:var(--pr)}#tip .tt:first-child{margin-top:0}
+#tip .tr{display:flex;justify-content:space-between;gap:14px}
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#111827;color:#fff;padding:9px 18px;border-radius:8px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:90;max-width:80vw;text-align:center}
+#toast.on{opacity:.96}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:70}
+#modal.on{display:flex}
+#modal .box{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:18px;min-width:320px;max-width:min(820px,94vw);max-height:90vh;overflow:auto}
+#modal h3{margin:0 0 8px;font:800 16px var(--fh)}
+.cal{display:grid;grid-template-columns:repeat(7,38px);gap:3px;margin:10px 0}
+.cal button{height:32px;border:1px solid var(--bd);background:var(--sf);border-radius:6px;cursor:pointer}
+.cal button:disabled{opacity:.35;cursor:not-allowed}.cal button.on{background:var(--pr);color:#fff;border-color:var(--pr)}.cal .h{text-align:center;font-size:10px;font-weight:700;color:var(--mu);line-height:32px}
+#logb{flex:1;overflow:auto;padding:8px 12px;font:11px/1.55 var(--fm)}
+#logb .t{color:#7C88A8}#logb .step{color:#6FA8FF}#logb .ok{color:#3CC48A}#logb .wn{color:#F0B429}#logb .er{color:#E0564A;font-weight:700}
+.empty{padding:34px 10px;text-align:center;color:var(--mu)}
+#burger{display:none}
+@media (max-width:1250px){.cg{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2,.frm{grid-template-columns:1fr}}
+@media (max-width:960px){
+  #app{grid-template-columns:minmax(0,1fr)}
+  #sb{position:fixed;left:0;top:28px;bottom:0;width:260px;z-index:50;transform:translateX(-100%);transition:transform .2s}
+  #sb.open{transform:none}#burger{display:inline-block;margin-bottom:10px}
+  .cg{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:620px){.cg{grid-template-columns:1fr}#ct{padding:18px 14px}}
+
+#dock{margin-top:14px;flex:1;min-height:130px;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.16);border-radius:8px;overflow:hidden;background:#08122A}
+#dock.col{flex:none;min-height:0}#dock.col #logb{display:none}
+#dock .dh{display:flex;flex-direction:column;gap:6px;padding:8px 9px;border-bottom:1px solid rgba(255,255,255,.16);font-size:11px;font-weight:700;color:#fff}
+#dock.col .dh{border-bottom:0}
+#dock .dbs{display:flex;gap:4px;align-items:center}
+#dock .dh select,#dock .dh button{font-size:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);color:#CBD3E8;border-radius:5px;padding:2px 6px;cursor:pointer}
+#dock .dh select{flex:1;min-width:0}#dock .dh select option{color:#1A2436}
+#logb{flex:1;overflow:auto;padding:7px 9px;font:10.5px/1.5 var(--fm);word-break:break-word}
+#logb .t{color:#7C88A8}#logb .step{color:#8FB5FF}#logb .ok{color:#3CC48A}#logb .wn{color:#F0B429}#logb .er{color:#FF7B6F;font-weight:700}
+
+.sec{font-weight:800;margin:14px 0 4px}
+</style>
+</head>
+<body>
+<div id="strip">Demo visual con datos ficticios — ningún número, nombre o identificador de esta página corresponde a un cliente, campaña o sistema real.</div>
+<div id="app">
+  <aside id="sb">
+    <div class="brand"><div class="t">Postmortem Hub</div><div class="s">Reportes de cierre</div></div>
+    <div id="nav"></div>
+    <div id="dock"><div class="dh"><span>Registro de actividad</span><span class="dbs"><select data-chg="lvl" aria-label="Nivel del registro"><option value="all">Todo</option><option value="wn">Avisos y errores</option></select><button data-act="logclr">Limpiar</button><button data-act="logcp">Copiar</button></span></div><div id="logb"></div></div>
+    <div class="sbf">
+      <button data-act="theme" id="thb">Modo oscuro</button>
+      <div class="v" id="ver"></div>
+    </div>
+  </aside>
+  <main id="ct"></main>
+</div>
+<div id="tip"></div>
+<div id="toast" role="status"></div>
+<div id="modal"><div class="box" id="mbox"></div></div>
+
+<script>
+(function () {
+"use strict";
+
+/* ===================== Utilidades ===================== */
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pad = (n) => String(n).padStart(2, "0");
+const nf = (v, d) => (v == null || !isFinite(v)) ? "—" : Number(v).toFixed(d).replace(".", ",");
+const pc = (v) => (v == null || !isFinite(v)) ? "—" : nf(v * 100, 2) + "%";
+const mmss = (s) => { if (s == null || !isFinite(s)) return "—"; s = Math.round(s); return Math.floor(s / 60) + ":" + pad(s % 60); };
+function mulberry32(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function hs(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+const DOW = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+const MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const fdate = (d) => pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + "/" + d.getFullYear();
+const today = () => { const d = new Date(); d.setHours(12, 0, 0, 0); return d; };
+const isOp = (d) => { const w = d.getDay(); return w !== 0 && w !== 6; };
+function lastOp() { const d = today(); d.setDate(d.getDate() - 1); while (!isOp(d)) d.setDate(d.getDate() - 1); return d; }
+function opMinus(d, n) { const x = new Date(d); while (n > 0) { x.setDate(x.getDate() - 1); if (isOp(x)) n--; } return x; }
+function opDiff(target, d) { let n = 0; const x = new Date(d); while (x < target && fdate(x) !== fdate(target)) { x.setDate(x.getDate() + 1); if (isOp(x)) n++; } return n; }
+const mixc = (hex, w) => { const h = hex.replace("#", ""), c = [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16)); return "#" + c.map((v) => pad(Math.round(v + (255 - v) * w).toString(16))).join(""); };
+const darkc = (hex, k) => { const h = hex.replace("#", ""), c = [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16)); return "#" + c.map((v) => pad(Math.round(v * k).toString(16))).join(""); };
+const hsl2hex = (h, s, l) => { s /= 100; l /= 100; const a = s * Math.min(l, 1 - l), f = (n) => { const k = (n + h / 30) % 12, c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return pad(Math.round(255 * c).toString(16)); }; return "#" + f(0) + f(8) + f(4); };
+
+/* ===================== Definiciones estáticas ===================== */
+const VER = "v1.0-demo";
+const CAMPS = {
+  A: { name: "Campaña A", grp: 1, type: "front", plat: "Central tipo nube", hue: 215, svc: 10, aht: 480, lobs: ["Ventas", "Soporte", "Retención", "Cobranza"], conns: ["SQL", "Red", "Local"], lag: 0, sent: 0, sat: true },
+  B: { name: "Campaña B", grp: 1, type: "front", plat: "Central tipo nube", hue: 160, svc: 10, aht: 420, lobs: ["Consultas", "Reclamos", "Soporte"], conns: ["SQL", "Red", "Local"], lag: 1, sent: 1 },
+  C: { name: "Campaña C", grp: 2, type: "front", plat: "Central tipo nube", hue: 28, svc: 30, aht: 540, lobs: ["Ventas", "Postventa", "Reclamos", "Soporte", "Mesa"], conns: ["SQL", "Red"], lag: 2, sent: 1, sat: true, modes: true },
+  D: { name: "Campaña D", grp: 1, type: "rrss", plat: "Redes sociales · tickets", hue: 280, svc: 180, aht: 600, lobs: ["Cerradas Norte", "Cerradas Sur"], conns: ["Red", "Local"], lag: 3, sent: 1 },
+  E: { name: "Campaña E", grp: 1, type: "pne", plat: "Postventa · tickets", hue: 340, svc: 180, aht: 660, lobs: ["Postventa"], conns: ["Red", "Local"], lag: 0, sent: 0 },
+  F: { name: "Campaña F", grp: 2, type: "front", plat: "Central tipo on-premise", hue: 190, svc: 20, aht: 360, lobs: ["Entrada", "Salida"], conns: ["SQL", "Local"], lag: 1, sent: 2 },
+  G: { name: "Campaña G", grp: 2, type: "front", plat: "Central tipo nube", hue: 45, svc: 30, aht: 510, lobs: ["Mesa 1", "Mesa 2", "Ventas", "Soporte", "Reclamos", "Retención"], conns: ["SQL", "Red", "Local"], lag: 2, sent: 2, sat: true, modes: true },
+  H: { name: "Campaña H", grp: 2, type: "front", plat: "Central tipo on-premise", hue: 95, svc: 30, aht: 450, lobs: ["Multiproducto 1", "Multiproducto 2", "Multiproducto 3", "Soporte", "Cobranza", "Mesa"], conns: ["SQL", "Red", "Local"], lag: 4, sent: 3, noRoster: true }
+};
+CAMPS.A.brand = hsl2hex(215, 62, 42); Object.keys(CAMPS).forEach((k) => { CAMPS[k].brand = hsl2hex(CAMPS[k].hue, 62, 40); CAMPS[k].ini = "C" + k; });
+const WDL = [["L", 1], ["m", 2], ["M", 3], ["J", 4], ["V", 5], ["S", 6], ["D", 0]];
+const SLOTS = []; for (let m = 480; m <= 1230; m += 30) SLOTS.push({ m: m, l: pad(Math.floor(m / 60)) + ":" + pad(m % 60) });
+const XC = [
+  ["fecha", "FECHA", "date", 0], ["lob", "LOB", "txt", 0], ["frc", "FRCAST", "n0", 0], ["capProy", "CAP PROY", "n2", 0], ["capReal", "CAP REAL", "n2", 0], ["c2f", "C2F(%)", "p", 0], ["cr2f", "CR2F(%)", "p", 0],
+  ["ofr", "OFR", "n0", 0], ["flujo", "FLUJO SALIENTE", "n0", 0], ["atn", "ATN", "n0", 0], ["abn", "ABN", "n0", 0], ["abnRap", "ABN Rap", "n0", 0], ["sl", "SL", "n0", 0], ["o2f", "O2F(%)", "p", 0], ["h2f", "H2F(%)", "p", 0],
+  ["na", "NA(%)", "p", 0], ["abnp", "ABN(%)", "p", 0], ["flujop", "FLUJO(%)", "p", 0], ["slgs", "SL Gs (%)", "p", 0], ["slp", "SL (%)", "p", 0], ["asa", "ASA", "n2", 0],
+  ["ahtProg", "AHT PROG", "mm", 1], ["ahtDec", "AHT dec", "mm", 1], ["ahtReal", "AHT Real", "mm", 1], ["ahtDev", "AHT Desvío(%)", "p", 1],
+  ["auxPlan", "Aux Plan (%)", "p", 2], ["auxp", "Aux (%)", "p", 2], ["auxDev", "Aux Desvío (%)", "p", 2],
+  ["hsPlan", "Hs Plan", "n2", 3], ["hrs", "Horas Reales", "n2", 3], ["lunch", "Horas Lunch", "n2", 3], ["ausPlan", "Aus Plan (%)", "p", 3], ["aus", "AUS", "p", 3], ["ausDev", "Aus Desvío (%)", "p", 3],
+  ["avail", "Avail(%)", "p", 4], ["b2p", "B2P(%)", "p", 4], ["cph", "CPH", "n2", 4], ["erl", "Erlang Gross", "n2", 5], ["dif", "Dif.", "n2", 5]
+];
+const BANDS = [["", 21], ["AHT", 4], ["AUXILIAR", 3], ["AUSENTISMO", 6], ["PRODUCTIVIDAD", 3], ["OU", 2]];
+const ORI = { L: "Línea de tiempo", I: "Interacciones", C: "Calculado", O: "OU" };
+const IND = [
+  ["Conectado", "Suma de todos los estados distintos de «desconectado».", "Tiempo logueado de los agentes dentro de la franja.", "L"],
+  ["Auxiliar", "Disponible + Ausente + Descanso + Comida + Ocupado + Sistema ausente + Reunión + Capacitación.", "Tiempo en estados no productivos. «Ocupado» vale 0 cuando la fuente no distingue ese estado.", "L"],
+  ["Productivo", "Suma del manejo total de cada conversación (habla + retención + cierre).", "Tiempo efectivo atendiendo.", "I"],
+  ["Oferta (OFR)", "Interacciones entrantes.", "Todo lo que llegó a la cola.", "I"],
+  ["Contestadas (ATN)", "Oferta no abandonada.", "Lo que un agente tomó.", "I"],
+  ["Abandonadas (ABN)", "Oferta abandonada.", "El cliente cortó antes de ser atendido.", "I"],
+  ["Abandono rápido (ABN Rap)", "Abandonadas con tiempo de abandono ≤ 5 s.", "Se descuentan del denominador del SL Gs.", "I"],
+  ["Flujo saliente", "Interacciones que un flujo o IVR sacó de la cola antes de llegar a un agente.", "No consumen tiempo de agente.", "I"],
+  ["Cumplen el SLA", "Contestadas con espera en cola ≤ umbral de servicio (10 s por defecto).", "El umbral se ajusta por campaña en Objetivos.", "I"],
+  ["ASA", "Promedio de la espera en cola de las contestadas.", "Velocidad media de respuesta.", "I"],
+  ["Volumen (FRCAST)", "Pronóstico del intervalo.", "Sale de la planificación semanal.", "O"],
+  ["Personal programado / neto / productivo", "Columnas del plan de dotación.", "Dotación planificada por franja.", "O"],
+  ["Avail", "max(0, (Conectado − Auxiliar) − Productivo).", "Tiempo libre esperando contactos.", "C"],
+  ["%Avail", "Avail ÷ Conectado.", "Qué parte del tiempo conectado estuvo libre.", "C"],
+  ["Aux (%)", "Auxiliar ÷ Conectado.", "Qué parte del tiempo se fue en auxiliares.", "C"],
+  ["B2P (%)", "1 − Avail(%) − Aux(%).", "Qué parte del tiempo fue productiva.", "C"],
+  ["NA (%)", "Contestadas ÷ Oferta.", "Nivel de atención.", "C"],
+  ["ABN (%)", "Abandonadas ÷ Oferta.", "Tasa de abandono.", "C"],
+  ["FLUJO (%)", "Flujo saliente ÷ Oferta.", "Peso de lo resuelto antes de un agente.", "C"],
+  ["SL (%)", "Cumplen el SLA ÷ Oferta.", "Nivel de servicio sobre lo ofrecido.", "C"],
+  ["SL Gs (%)", "Cumplen el SLA ÷ (Contestadas + Abandonadas − Abandono rápido).", "Nivel de servicio descontando los cortes rápidos.", "C"],
+  ["AHT Real", "(Conversación + Retención + Trabajo posterior) ÷ Contestadas.", "Duración media de cada contacto atendido.", "C"],
+  ["Hs Plan", "Horas planificadas del turno real del día, o Personal programado × 0,5 h si no hay turno.", "Base del ausentismo.", "C"],
+  ["AUS", "(Hs Plan − Conectado) ÷ Hs Plan.", "Ausentismo del intervalo.", "C"],
+  ["CAP PROY", "Capacidad del plan, o Personal productivo × (30 ÷ AHT programado).", "Contactos que el plan podía resolver.", "C"],
+  ["CAP REAL", "(Conectado − Auxiliar) ÷ AHT, en minutos.", "Contactos que la dotación real podía resolver.", "C"],
+  ["C2F / CR2F (%)", "CAP PROY ÷ Volumen / CAP REAL ÷ Volumen.", "Cobertura del plan y de la dotación real sobre el pronóstico.", "C"],
+  ["O2F / H2F (%)", "Oferta ÷ Volumen / Contestadas ÷ Volumen.", "Cumplimiento del pronóstico. La banda objetivo se define en Objetivos.", "C"],
+  ["CPH", "Contestadas ÷ horas productivas.", "Contactos atendidos por hora productiva.", "C"],
+  ["Cumple SLA de abordaje", "El ticket se abordó dentro del tiempo de servicio de la campaña.", "Solo campañas de tickets (redes sociales y postventa).", "C", "t"]
+];
+const CHANGELOG = [
+  { t: "Versión " + VER + " — 13/11/2026", c: "#5B4FCF", it: [["NUEVO", "Hub de campañas con grupos, filtros Pendientes / Enviados y semáforo de datos."], ["NUEVO", "Tablero Delivery, Excel con hojas MES y DIA (39 columnas) y borrador de correo con comentario."], ["NUEVO", "Parámetros por campaña: LOB, objetivos, correo, segmentos y colas, indicadores y fórmulas."], ["MEJORA", "Tema claro y oscuro con paleta completa."], ["INFO", "Todos los datos son ficticios y se generan en el navegador."]] },
+  { t: "Versión v0.9 — 10/11/2026", c: "#2E6FBF", it: [["MEJORA", "Aviso de reproceso al cambiar un parámetro de cálculo."], ["FIX", "El corte inmediato por roster vacío ya no deja la campaña en estado «en curso»."], ["MEJORA", "El comentario del correo puede ser «Estable» o «Nuevo (beta)»."]] },
+  { t: "Versión v0.8 — 04/11/2026", c: "#1E8E5A", it: [["NUEVO", "Botón «Reprocesar tickets» en campañas de tickets."], ["BLINDAJE", "El correo nunca se envía solo: siempre se abre un borrador."]] }
+];
+const BADGE = { NUEVO: "#1A9E5C", FIX: "#D1460F", INFO: "#4A90D9", MEJORA: "#607D8B", BLINDAJE: "#2E86C1" };
+const NAVS = [["", [["hub", "", "Postmortem"]]], ["AJUSTES", [["params", "", "Parámetros"], ["config", "", "Configuración"]]], ["AYUDA", [["news", "", "Novedades"], ["about", "", "Acerca de"]]]];
+
+
+/* ===================== Parámetros y configuración ===================== */
+const LS = "pmdemo.params.v1";
+let P = {}, CFG = {};
+const lobQueue = (l, n) => "Cola_" + l.replace(/\s+/g, "_") + "_" + n;
+function defP(id) {
+  const C = CAMPS[id], q = {}, rm = {};
+  C.lobs.forEach((l, i) => { q[lobQueue(l, 1)] = l; q[lobQueue(l, 2)] = l; rm["Grupo de roster " + (i + 1)] = l; });
+  q["Cola_Interna"] = null;
+  return { lobs: C.lobs.slice(), qmap: q, rmap: rm, to: "equipo@ejemplo.com", cc: "supervision@ejemplo.com", proact: false, fuera: false, ring: false,
+    t: { sla: 0.80, svc: C.svc, abn: 0.05, na: 0.95, aux: 0.235, aus: 0.15, lo: 0.90, hi: 1.10 },
+    subj: "Postmortem {fecha} — " + C.name, body: "Buenos días, adjunto postmortem del día {fecha}. {comentario} Saludos.", meet: "Lunes", conn: C.conns[0], mode: "inter" };
+}
+const defCfg = () => ({ sql: "Servidor=servidor-demo;Base=postmortem_demo;Usuario=usuario_lectura", rf: "\\\\servidor\\crudos\\front", rm: "\\\\servidor\\crudos\\mensuales", mail: "Outlook", cmt: "estable" });
+function loadP() {
+  let o = null; try { o = JSON.parse(localStorage.getItem(LS) || "null"); } catch (e) { o = null; }
+  Object.keys(CAMPS).forEach((k) => { const d = defP(k); const s = o && o.P && o.P[k]; P[k] = s ? Object.assign(d, s, { t: Object.assign(d.t, s.t || {}) }) : d; });
+  CFG = Object.assign(defCfg(), o && o.CFG ? o.CFG : {});
+}
+function saveP() { try { localStorage.setItem(LS, JSON.stringify({ P: P, CFG: CFG })); } catch (e) { /* sin almacenamiento */ } }
+const calcKey = (id) => { const p = P[id]; return JSON.stringify([p.lobs, p.qmap, p.proact, p.fuera, p.ring, p.t.svc, p.mode]); };
+const connOk = (c) => c === "Local" || (c === "SQL" && CFG.sql.trim() !== "") || (c === "Red" && CFG.rf.trim() !== "" && CFG.rm.trim() !== "");
+const connWhy = (c) => c === "SQL" ? "SQL no disponible: la cadena de conexión está vacía. Complétela en Configuración." : "Red no disponible: faltan las rutas de crudos. Complételas en Configuración.";
+
+/* ===================== Generación de datos ficticios ===================== */
+const qBase = (q) => 16 + (hs(q) % 26);
+function lobBase(p, l) { let b = 0; Object.keys(p.qmap).forEach((q) => { if (p.qmap[q] === l) b += qBase(q); }); return b; }
+const shp = (m) => { const x = m / 60; return 0.22 + 0.78 * Math.exp(-Math.pow(x - 11.5, 2) / (2 * 2.3 * 2.3)) + 0.68 * Math.exp(-Math.pow(x - 16.5, 2) / (2 * 1.9 * 1.9)); };
+const dayF = (d) => { const w = d.getDay(); return w === 0 ? 0.08 : w === 6 ? 0.3 : 1; };
+const RAWK = ["frc", "capProy", "ofr", "flujo", "atn", "abn", "abnRap", "sl", "asaS", "work", "conn", "aux", "avail", "lunch", "hsPlan", "erl"];
+function rawSlot(id, p, l, date, i, base) {
+  const C = CAMPS[id], R = mulberry32(hs(id + "|" + l + "|" + fdate(date) + "|" + i)), rr = (a, b) => a + R() * (b - a);
+  const sh = shp(SLOTS[i].m), df = dayF(date) * rr(0.9, 1.1);
+  const frc = Math.max(0, Math.round(base * sh * df * rr(0.95, 1.05)));
+  let ofr = Math.max(0, Math.round(frc * rr(0.86, 1.14)));
+  if (C.type === "front" && p.ring) ofr = Math.round(ofr * 0.97);
+  if (C.type !== "front" && p.proact) ofr = Math.round(ofr * 1.05);
+  const abn = Math.min(ofr, Math.round(ofr * rr(0.01, 0.10))), atn = ofr - abn, abnRap = Math.round(abn * rr(0, 0.3)), flujo = Math.round(atn * rr(0, 0.05));
+  const sv = p.t.svc >= 180 ? [0.90, 0.99] : p.t.svc >= 30 ? [0.80, 0.97] : p.t.svc >= 20 ? [0.75, 0.95] : [0.68, 0.92];
+  let slr = rr(sv[0], sv[1]); if (C.type !== "front" && p.fuera) slr = Math.min(0.99, slr + 0.03);
+  const ahtReal = C.aht * rr(0.88, 1.15) * (p.mode === "clasico" ? rr(0.98, 1.02) : 1);
+  const work = atn * ahtReal, prodProg = frc * C.aht / 1800 / 0.82;
+  const prodT = work / rr(0.65, 0.85), auxF = rr(0.15, 0.30), aux = prodT * auxF / (1 - auxF);
+  return { frc: frc, capProy: frc / 0.82 * rr(0.92, 1.12), ofr: ofr, flujo: flujo, atn: atn, abn: abn, abnRap: abnRap, sl: Math.round(Math.max(0, atn - flujo) * slr), asaS: rr(5, 40) * atn, work: work,
+    conn: prodT + aux, aux: aux, avail: Math.max(0, prodT - work), lunch: aux * rr(0.15, 0.30), hsPlan: Math.max(0.5, prodProg / (1 - 0.235) * rr(1.15, 1.35) * 0.5), erl: frc * C.aht / 3600 / 0.85 * 1.18 };
+}
+function agg(list) { const s = {}; RAWK.forEach((k) => { s[k] = 0; }); list.forEach((r) => RAWK.forEach((k) => { s[k] += r[k]; })); return s; }
+function cols(s, id) {
+  const C = CAMPS[id], af = (a, b) => (b > 0 ? a / b : null);
+  const ahtReal = af(s.work, s.atn), capReal = ahtReal ? (s.conn - s.aux) / ahtReal : null, hrs = s.conn / 3600, auxp = af(s.aux, s.conn);
+  const aus = s.hsPlan > 0 ? (s.hsPlan - hrs) / s.hsPlan : null;
+  return { frc: s.frc, capProy: s.capProy, capReal: capReal, c2f: af(s.capProy, s.frc), cr2f: capReal != null ? af(capReal, s.frc) : null, ofr: s.ofr, flujo: s.flujo, atn: s.atn, abn: s.abn, abnRap: s.abnRap, sl: s.sl,
+    o2f: af(s.ofr, s.frc), h2f: af(s.atn, s.frc), na: af(s.atn, s.ofr), abnp: af(s.abn, s.ofr), flujop: af(s.flujo, s.ofr), slgs: af(s.sl, s.atn + s.abn - s.abnRap), slp: af(s.sl, s.ofr), asa: af(s.asaS, s.atn),
+    ahtProg: C.aht, ahtDec: C.aht, ahtReal: ahtReal, ahtDev: ahtReal ? ahtReal / C.aht - 1 : null, auxPlan: 0.235, auxp: auxp, auxDev: auxp != null ? auxp / 0.235 - 1 : null,
+    hsPlan: s.hsPlan, hrs: hrs, lunch: s.lunch / 3600, ausPlan: 0.12, aus: aus, ausDev: aus != null ? aus - 0.12 : null,
+    avail: af(s.avail, s.conn), b2p: s.conn > 0 ? 1 - s.avail / s.conn - auxp : null, cph: (s.conn - s.aux) > 0 ? s.atn / ((s.conn - s.aux) / 3600) : null, erl: s.erl, dif: hrs - s.erl };
+}
+function buildResult(id, date) {
+  const p = P[id], lobs = p.lobs, bases = lobs.map((l) => lobBase(p, l)), mes = [];
+  let dayRaw = null;
+  for (let d = new Date(date.getFullYear(), date.getMonth(), 1, 12); d <= date; d.setDate(d.getDate() + 1)) {
+    const dd = new Date(d), all = lobs.map((l, li) => SLOTS.map((s, i) => rawSlot(id, p, l, dd, i, bases[li])));
+    lobs.forEach((l, li) => { const c = cols(agg(all[li]), id); c.fecha = fdate(dd); c.lob = l; mes.push(c); });
+    if (fdate(dd) === fdate(date)) dayRaw = all;
+  }
+  const dia = SLOTS.map((sl, i) => { const c = cols(agg(lobs.map((l, li) => dayRaw[li][i])), id); c.fecha = fdate(date); c.lob = sl.l; return c; });
+  const tot = cols(agg([].concat.apply([], dayRaw)), id);
+  return { id: id, date: new Date(date), key: calcKey(id), mes: mes, dia: dia, kpi: tot, stamp: new Date() };
+}
+function cstyle(k, v, t) {
+  if (v == null) return "";
+  const ge = (x, tg) => (x >= tg ? "g" : x >= tg - 0.05 ? "y" : "r"), le = (x, tg) => (x <= tg ? "g" : x <= tg * 2 ? "y" : "r");
+  switch (k) {
+    case "slp": return ge(v, t.sla); case "na": return ge(v, t.na); case "abnp": return le(v, t.abn);
+    case "auxp": return v <= t.aux ? "g" : "r"; case "aus": return v <= t.aus ? "g" : "r";
+    case "o2f": case "h2f": return (v >= t.lo && v <= t.hi) ? "g" : (v >= t.lo - 0.05 && v <= t.hi + 0.05) ? "y" : "r";
+  }
+  return "";
+}
+function fmtX(type, v) {
+  if (v == null) return "—";
+  switch (type) { case "date": case "txt": return String(v); case "n0": return String(Math.round(v)); case "n2": return nf(v, 2); case "p": return pc(v); case "mm": return mmss(v); }
+  return String(v);
+}
+function comment(res, style) {
+  const p = P[res.id], k = res.kpi, t = p.t, d = fdate(res.date);
+  const bad = res.dia.filter((r) => r.slp != null && r.slp < t.sla - 0.05).sort((a, b) => a.slp - b.slp).slice(0, 3);
+  let s = "El día " + d + " cerró con " + pc(k.na) + " de atención y " + pc(k.slp) + " de SL, " + (k.slp >= t.sla ? "cumpliendo" : "por debajo de") + " el objetivo de " + pc(t.sla) + ". El abandono fue de " + pc(k.abnp) + " y el AHT de " + mmss(k.ahtReal) + ".";
+  if (style === "estable") { if (bad.length) s += " Las franjas con menor SL fueron " + bad.map((x) => x.lob).join(", ") + "."; return s; }
+  s += " El volumen ofrecido estuvo " + (k.o2f > t.hi ? "por encima" : k.o2f < t.lo ? "por debajo" : "dentro") + " de la banda del pronóstico (" + pc(k.o2f) + ").";
+  bad.forEach((r) => { s += " A las " + r.lob + " el SL cayó a " + pc(r.slp) + " " + (r.avail != null && r.avail < 0.08 ? "con poca disponibilidad (" + pc(r.avail) + ")." : "con el volumen en " + pc(r.o2f) + " del pronóstico."); });
+  s += " El ausentismo del día fue " + pc(k.aus) + " frente a un objetivo de " + pc(t.aus) + (k.aus > t.aus ? ": conviene revisar la cobertura de las franjas críticas." : ".");
+  return s;
+}
+
+
+/* ===================== Estado ===================== */
+const S = { view: "hub", theme: "light", grp: { 1: true, 2: true }, filt: "all", sel: {}, run: {}, res: {}, dd: {}, sd: {}, date: null, consulted: false, busy: false,
+  rcamp: null, rtab: "tablero", pcamp: "A", ptab: "pm", ctab: "conexion", pmsg: "", cal: null, logs: [], logOpen: true, lvl: "all", dcamp: null };
+const pp = (path) => esc(JSON.stringify(path));
+const schedFor = (id, li, wd) => { const C = CAMPS[id]; if (wd === 0) return null; if (wd === 6) return (C.sat && li % 2 === 0) ? "10hs-14hs" : null; return (9 + (li % 2)) + "hs-" + (18 + (li % 3)) + "hs"; };
+const lag = (id) => (S.dd[id] ? opDiff(lastOp(), S.dd[id]) : null);
+const sentLag = (id) => (S.sd[id] ? opDiff(lastOp(), S.sd[id]) : null);
+const isStale = (id) => !!S.res[id] && S.res[id].key !== calcKey(id);
+
+function visCamps() {
+  return Object.keys(CAMPS).filter((id) => S.grp[CAMPS[id].grp]).filter((id) => {
+    if (S.filt === "all") return true;
+    const sl = sentLag(id); if (sl == null) return S.filt === "pe";
+    return S.filt === "pe" ? sl > 0 : sl <= 0;
+  }).sort((a, b) => CAMPS[a].name.localeCompare(CAMPS[b].name));
+}
+function counts() {
+  let pe = 0, en = 0; if (!S.consulted) return { pe: "—", en: "—" };
+  Object.keys(CAMPS).filter((id) => S.grp[CAMPS[id].grp]).forEach((id) => { const sl = sentLag(id); if (sl != null && sl <= 0) en++; else pe++; });
+  return { pe: pe, en: en };
+}
+
+/* ===================== Hub de campañas ===================== */
+function cardHTML(id) {
+  const C = CAMPS[id], p = P[id], l = lag(id), on = !!S.sel[id];
+  const sc = l == null ? "n" : l <= 0 ? "g" : l === 1 ? "y" : l === 2 ? "r" : "r b";
+  const dd = S.dd[id] ? fdate(S.dd[id]) : "no disponible", sd = S.sd[id] ? fdate(S.sd[id]) : "sin datos";
+  const tip = l == null ? "Todavía no se consultaron los datos." : "Datos hasta " + dd + ": atraso de " + l + " día(s) operativo(s)" + (l === 0 ? " (al día)" : "");
+  const letters = WDL.map((w) => { const worked = p.lobs.some((x, li) => schedFor(id, li, w[1])); return '<span class="' + (worked ? "w1" : "w0") + '" tabindex="0" data-wl="' + id + ":" + w[1] + '">' + w[0] + "</span>"; }).join("");
+  const cn = ["SQL", "Red", "Local"].map((c) => { const al = C.conns.indexOf(c) >= 0, ok = al && connOk(c); return '<button class="' + (p.conn === c ? "on" : "") + '" data-act="conn" data-id="' + id + '" data-v="' + c + '"' + (ok ? "" : " disabled") + ' title="' + esc(!al ? c + " no está disponible para esta campaña." : !ok ? connWhy(c) : c) + '">' + c + "</button>"; }).join("");
+  const why = ["SQL", "Red", "Local"].filter((c) => !(C.conns.indexOf(c) >= 0 && connOk(c))).map((c) => (C.conns.indexOf(c) < 0 ? c + ": no está disponible para esta campaña." : connWhy(c))).join(" ");
+  const mode = C.modes ? '<div class="kv"><span class="mu">Modo de cálculo:</span><span class="seg" title="Interacciones con línea de tiempo de estado de agente, o crudo clásico de colas y agentes por intervalo."><button class="' + (p.mode === "inter" ? "on" : "") + '" data-act="mode" data-id="' + id + '" data-v="inter">Interacciones</button><button class="' + (p.mode === "clasico" ? "on" : "") + '" data-act="mode" data-id="' + id + '" data-v="clasico">Clásico</button></span></div>' : "";
+  const r = S.run[id], stale = isStale(id);
+  const badge = r === "run" ? '<span class="rb run">En curso</span>' : r === "er" ? '<span class="rb er" title="' + esc(S.run[id + "_msg"] || "") + '">Error</span>' : stale ? '<span class="rb st" title="Los parámetros de cálculo cambiaron desde la última corrida.">Desactualizado</span>' : r === "ok" ? '<span class="rb ok">Listo</span>' : '<span class="rb">&nbsp;</span>';
+  const rep = C.type !== "front" ? '<button class="btn s" data-act="reproc" data-id="' + id + '">Reprocesar tickets</button>' : "";
+  return '<div class="cc' + (on ? " on" : "") + '"><div class="idn" data-act="sel" data-id="' + id + '" title="Clic para seleccionar la campaña"><div class="bn"><div class="logo" style="background:' + C.brand + '">' + C.ini + '</div><div class="dot ' + sc + '" title="' + esc(tip) + '"></div></div><div class="nm">' + esc(C.name) + '</div><div class="pl">' + esc(C.plat) + "</div></div>" +
+    '<div class="cb"><div class="kv"><span class="mu">Datos hasta:</span><b>' + dd + '</b></div><div class="kv"><span class="mu">Enviado hasta:</span><b>' + sd + '</b></div><div class="wl">' + letters + '</div><div class="kv"><span class="mu">Conexión:</span><span class="seg" title="' + esc(why) + '">' + cn + "</span></div>" + mode + '<div class="kv">' + badge + rep + "</div></div></div>";
+}
+function viewHub() {
+  const vis = visCamps(), allSel = vis.length > 0 && vis.every((id) => S.sel[id]), ct = counts(), anyRes = vis.some((id) => S.sel[id] && S.res[id]);
+  const gb = [1, 2].map((g) => '<button class="gb' + (S.grp[g] ? " on" : "") + '" data-act="grp" data-v="' + g + '">Grupo ' + g + "</button>").join("");
+  const d = S.date;
+  return '<h1 class="pg">Postmortem</h1><p class="sub">Hub de reportes mensuales de cierre por campaña</p>' +
+    '<div class="cd"><div class="chd"><h2 class="sh">Campañas</h2><div class="row" style="margin:0">' + gb + "</div></div>" +
+    '<div class="row"><label class="ck"><input type="checkbox" data-act="selall"' + (allSel ? " checked" : "") + "> Seleccionar todas</label>" +
+    '<div class="tile pe' + (S.filt === "pe" ? " on" : "") + '" data-act="filt" data-v="pe"><div class="n">' + ct.pe + '</div><div class="l">Pendientes</div></div><div class="tile en' + (S.filt === "en" ? " on" : "") + '" data-act="filt" data-v="en"><div class="n">' + ct.en + '</div><div class="l">Enviados</div></div>' +
+    '<span style="flex:1"></span><div class="fld"><span class="mu">Fecha:</span><button class="btn s" data-act="dprev" aria-label="Mes anterior">◀</button><button class="btn" data-act="cal">' + fdate(d) + '</button><button class="btn s" data-act="dnext" aria-label="Mes siguiente">▶</button></div></div>' +
+    '<div class="row"><button class="btn" data-act="consult">Consultar datos</button><button class="btn p" data-act="proc"' + (S.busy ? " disabled" : "") + '>Procesar</button><button class="btn" data-act="send"' + (anyRes ? "" : " disabled") + '>Enviar</button><button class="btn" data-act="log">Registro</button><span class="mu sm">' + (S.filt !== "all" ? "Filtro: " + (S.filt === "pe" ? "pendientes" : "enviados") + " (clic en el tile para quitarlo)" : "") + "</span></div>" +
+    (vis.length ? '<div class="cg">' + vis.map(cardHTML).join("") + "</div>" : '<div class="empty">No hay campañas para este filtro.</div>') + "</div>" + resultsHTML();
+}
+
+/* ===================== Resultados y entregables ===================== */
+function semC(v, tg, mode) { if (v == null) return ["#9AA0AA", "#fff"]; const ok = mode === "le" ? v <= tg : v >= tg, mid = mode === "le" ? v <= tg * 2 : v >= tg - 0.05; return ok ? ["#00A050", "#fff"] : mid ? ["#F0DE8C", "#222"] : ["#ED1C24", "#fff"]; }
+function tableroHTML(id, r) {
+  const C = CAMPS[id], t = P[id].t, k = r.kpi, BG = mixc(C.brand, 0.92), D = darkc(C.brand, 0.65), L = mixc(C.brand, 0.75), B = mixc(C.brand, 0.55);
+  const kp = [["Oferta", String(Math.round(k.ofr)), null], ["Atención (NA)", pc(k.na), semC(k.na, t.na, "ge")], ["SL", pc(k.slp), semC(k.slp, t.sla, "ge")], ["Abandono", pc(k.abnp), semC(k.abnp, t.abn, "le")], ["AHT", mmss(k.ahtReal), null], ["Ausentismo", pc(k.aus), semC(k.aus, t.aus, "le")]];
+  const cards = kp.map((x) => '<div class="k" style="background:' + (x[2] ? x[2][0] : L) + ";color:" + (x[2] ? x[2][1] : D) + '"><div class="l">' + x[0] + '</div><div class="v">' + x[1] + "</div></div>").join("");
+  const cell = (v, tg, mode, txt) => { const c = semC(v, tg, mode); return '<td style="background:' + c[0] + ";color:" + c[1] + '">' + txt + "</td>"; };
+  const rows = r.dia.filter((x) => x.ofr > 0).map((x) => '<tr style="border-bottom:1px solid ' + B + '"><td><b>' + x.lob + "</b></td><td>" + Math.round(x.ofr) + "</td><td>" + Math.round(x.atn) + "</td>" + cell(x.na, t.na, "ge", pc(x.na)) + cell(x.slp, t.sla, "ge", pc(x.slp)) + cell(x.abnp, t.abn, "le", pc(x.abnp)) + "<td>" + nf(x.asa, 1) + " s</td><td>" + mmss(x.ahtReal) + "</td></tr>").join("");
+  return '<div class="tb" style="background:' + BG + ";color:" + D + ";border-color:" + B + '"><h3 style="color:' + D + '">' + esc(C.name) + ' — Tablero Delivery</h3><div class="ts" style="color:' + D + '">Postmortem del día ' + fdate(r.date) + " · " + esc(C.plat) + '</div><div class="kc">' + cards + '</div><table><thead><tr style="background:' + C.brand + '"><th>Franja</th><th>OFR</th><th>ATN</th><th>NA</th><th>SL</th><th>ABN</th><th>ASA</th><th>AHT</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+}
+function excelHTML(id, r, which) {
+  const p = P[id], C = CAMPS[id], rows = which === "mes" ? r.mes : r.dia, t = p.t;
+  const bands = BANDS.map((b, i) => '<th colspan="' + b[1] + '">' + (i === 0 ? esc(C.name) : b[0]) + "</th>").join("");
+  const head = XC.map((c, i) => '<th class="' + (i === 0 ? "c1" : i === 1 ? "c2" : "") + '">' + (i === 1 && which === "dia" ? "FRANJA" : c[1]) + "</th>").join("");
+  const body = rows.map((row) => "<tr>" + XC.map((c, i) => '<td class="' + (i === 0 ? "c1" : i === 1 ? "c2" : cstyle(c[0], row[c[0]], t)) + '">' + fmtX(c[2], row[c[0]]) + "</td>").join("") + "</tr>").join("");
+  return '<div class="help">Hoja ' + (which === "mes" ? "MES: una fila por fecha × LOB, del día 1 al " + fdate(r.date) : "DIA: una fila por fecha × franja de 30 minutos (sin LOB)") + ". 39 columnas; el formato condicional usa los objetivos de la campaña.</div>" +
+    '<div class="tw" style="max-height:440px"><table class="xt"><thead><tr class="band">' + bands + '</tr><tr class="cols">' + head + "</tr></thead><tbody>" + body + "</tbody></table></div>";
+}
+function mailText(id, r) {
+  const p = P[id], f = fdate(r.date);
+  return { subj: p.subj.replace("{fecha}", f), body: p.body.replace("{fecha}", f).replace("{comentario}", comment(r, CFG.cmt)) };
+}
+function mailHTML(id, r, compact) {
+  const p = P[id], m = mailText(id, r);
+  return '<div class="mail"><div class="h"><b>Para</b><span>' + esc(p.to) + "</span><b>CC</b><span>" + esc(p.cc) + "</span><b>Asunto</b><span>" + esc(m.subj) + '</span></div><p style="margin:0 0 10px">' + esc(m.body) + '</p><div style="zoom:' + (compact ? 0.62 : 0.8) + '">' + tableroHTML(id, r) + '</div><p class="help" style="margin-top:10px">Comentario generado de forma local (' + (CFG.cmt === "estable" ? "perfil Estable" : "perfil Nuevo (beta)") + "), sin ningún servicio de IA real. La app nunca envía sola: abre un borrador para que lo revise y lo envíe a mano.</p></div>";
+}
+function resultsHTML() {
+  const ids = Object.keys(S.res);
+  if (!ids.length) return '<div class="cd"><h2 class="sh">Resultados</h2><div class="empty">Todavía no hay resultados. Seleccione campañas y presione Procesar.</div></div>';
+  const id = S.rcamp && S.res[S.rcamp] ? S.rcamp : ids[ids.length - 1], r = S.res[id], k = r.kpi, stale = isStale(id);
+  const tabs = [["tablero", "Tablero Delivery"], ["mes", "Excel · MES"], ["dia", "Excel · DIA"], ["correo", "Correo"]];
+  let body;
+  if (S.rtab === "tablero") {
+    const kl = [["OFR", String(Math.round(k.ofr))], ["ATN", String(Math.round(k.atn))], ["NA (%)", pc(k.na)], ["ABN (%)", pc(k.abnp)], ["SL (%)", pc(k.slp)], ["ASA", nf(k.asa, 1) + " s"], ["AHT Real", mmss(k.ahtReal)], ["AUS", pc(k.aus)], ["Aux (%)", pc(k.auxp)], ["CPH", nf(k.cph, 2)]];
+    body = '<div class="row" style="align-items:flex-start;gap:20px">' + tableroHTML(id, r) + '<div style="min-width:210px"><div class="sec b" style="margin-bottom:6px">KPI del día</div>' + kl.map((x) => '<div class="kv" style="border-bottom:1px solid var(--bd);padding:3px 0"><span class="mu">' + x[0] + ":</span><b>" + x[1] + "</b></div>").join("") + '<div class="row"><button class="btn p" data-act="draft" data-id="' + id + '">Abrir borrador</button><button class="btn" data-act="simul" data-m="Abrir carpeta de salida (simulado: la demo no abre carpetas)">Abrir carpeta de salida</button></div></div></div>';
+  } else if (S.rtab === "mes" || S.rtab === "dia") body = excelHTML(id, r, S.rtab);
+  else body = mailHTML(id, r, false) + '<div class="row"><button class="btn p" data-act="draft" data-id="' + id + '">Abrir borrador</button></div>';
+  const sel = '<select data-chg="rcamp" aria-label="Campaña">' + ids.map((x) => "<option value=\"" + x + '"' + (x === id ? " selected" : "") + ">" + esc(CAMPS[x].name) + "</option>").join("") + "</select>";
+  return '<div class="cd"><div class="chd"><h2 class="sh">Resultados</h2><div class="row" style="margin:0">' + sel + (stale ? '<span class="rb st">Desactualizado</span><button class="btn s p" data-act="reproc" data-id="' + id + '">Reprocesar</button>' : "") + "</div></div>" +
+    '<div class="tabs">' + tabs.map((t) => '<button class="' + (S.rtab === t[0] ? "on" : "") + '" data-act="rtab" data-v="' + t[0] + '">' + t[1] + "</button>").join("") + "</div>" + body + "</div>";
+}
+
+
+/* ===================== Parámetros ===================== */
+const chk = (path, label, val) => '<label class="ck"><input type="checkbox" data-pp="' + pp(path) + '"' + (val ? " checked" : "") + "> " + esc(label) + "</label>";
+const numIn = (path, val, step) => '<input type="number" step="' + (step || "0.01") + '" data-pp="' + pp(path) + '" data-num="1" value="' + val + '">';
+function tabPm(id) {
+  const C = CAMPS[id], p = P[id];
+  const lobs = p.lobs.map((l, i) => '<div class="row"><input type="text" value="' + esc(l) + '" data-lobi="' + i + '" maxlength="30" style="width:260px" aria-label="Nombre del LOB"><button class="btn s d" data-act="dellob" data-i="' + i + '"' + (p.lobs.length < 2 ? " disabled" : "") + ">Eliminar LOB</button></div>").join("");
+  const calc = C.type === "front" ? chk(["ring"], "Excluir de Ofrecidas las llamadas RING AGENT (sonaron pero no llegaron a un agente)", p.ring) : chk(["proact"], "Modo Proactivo", p.proact) + "<br>" + chk(["fuera"], "Contar los tickets fuera de horario como SLA cumplido", p.fuera);
+  return '<div class="cd"><div class="sec">LOB de la campaña</div>' + lobs + '<div class="row"><button class="btn" data-act="addlob">Agregar LOB</button><button class="btn" data-act="rmap">Mapeo de roster → LOB…</button></div>' +
+    '<div class="sec">Destinatarios</div><div class="frm"><label>Para</label><input type="text" data-pp="' + pp(["to"]) + '" value="' + esc(p.to) + '"><label>CC</label><input type="text" data-pp="' + pp(["cc"]) + '" value="' + esc(p.cc) + '"></div>' +
+    '<div class="sec">Opciones de cálculo</div>' + calc + '<div class="help">Se guarda en esta computadora. Si cambia un parámetro de cálculo, al guardar se ofrece reprocesar los días ya calculados.</div><div class="row"><button class="btn p" data-act="savepm">Guardar Postmortem</button></div></div>';
+}
+function tabInd(id) {
+  const C = CAMPS[id], rows = IND.filter((x) => !x[4] || C.type !== "front");
+  if (!rows.length) return '<div class="empty">Todavía no hay indicadores documentados para esta campaña.</div>';
+  return '<div class="cd"><table class="fm"><thead><tr><th>Indicador</th><th>Fórmula</th><th>Explicación</th><th>Origen</th></tr></thead><tbody>' + rows.map((x) => "<tr><td><b>" + esc(x[0]) + "</b></td><td>" + esc(x[1]) + '</td><td class="mu">' + esc(x[2]) + '</td><td><span class="ori ' + x[3] + '">' + ORI[x[3]] + "</span></td></tr>").join("") + "</tbody></table></div>";
+}
+function tabSegm(id) {
+  const p = P[id], opts = (cur) => p.lobs.map((l) => "<option" + (cur === l ? " selected" : "") + ">" + esc(l) + "</option>").join("") + '<option value="__none__"' + (cur == null ? " selected" : "") + ">— no cuenta —</option>";
+  const rows = Object.keys(p.qmap).map((q) => "<tr><td class=\"mono\">" + esc(q) + "</td><td>" + qBase(q) + '</td><td><select data-q="' + esc(q) + '">' + opts(p.qmap[q]) + "</select></td></tr>").join("");
+  return '<div class="cd"><div class="help">Asigna cada cola del crudo a un LOB de la campaña. El volumen de cada LOB es la suma de sus colas; mover una cola recalcula los resultados al reprocesar.</div><table class="fm"><thead><tr><th>Cola</th><th>Volumen base</th><th>Cuenta en</th></tr></thead><tbody>' + rows + "</tbody></table></div>";
+}
+function tabObj(id) {
+  const p = P[id], t = p.t, C = CAMPS[id];
+  return '<div class="grid2"><div class="cd"><div class="sec">Objetivos</div><div class="frm"><label>sla_target (SL)</label>' + numIn(["t", "sla"], t.sla) + "<label>service_time_sec (umbral de servicio, s)</label>" + numIn(["t", "svc"], t.svc, "5") + "<label>abn_target (abandono máx.)</label>" + numIn(["t", "abn"], t.abn) + "<label>na_target (atención)</label>" + numIn(["t", "na"], t.na) + "<label>aux_target (auxiliar máx.)</label>" + numIn(["t", "aux"], t.aux, "0.005") + "<label>aus_target (ausentismo máx.)</label>" + numIn(["t", "aus"], t.aus) + "<label>o2f_lower (banda de pronóstico)</label>" + numIn(["t", "lo"], t.lo) + "<label>o2f_upper</label>" + numIn(["t", "hi"], t.hi) + '</div><div class="help">Los objetivos pintan el formato condicional del Excel y el semáforo del tablero. El umbral de servicio es un parámetro de cálculo.</div></div>' +
+    '<div class="cd"><div class="sec">Correo de la campaña</div><div class="frm"><label>Asunto</label><input type="text" data-pp="' + pp(["subj"]) + '" value="' + esc(p.subj) + '"><label>Cuerpo</label><textarea data-pp="' + pp(["body"]) + '">' + esc(p.body) + '</textarea><label>Día de reunión semanal</label><select data-pp="' + pp(["meet"]) + '">' + ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].map((d) => "<option" + (p.meet === d ? " selected" : "") + ">" + d + "</option>").join("") + '</select></div><div class="help">Puede usar {fecha} en el asunto y {fecha} y {comentario} en el cuerpo.</div></div></div>';
+}
+function viewParams() {
+  const id = S.pcamp, tabs = [["pm", "Postmortem"], ["ind", "Indicadores y Fórmulas"], ["seg", "Segmentos y colas"], ["obj", "Objetivos y correo"]];
+  const body = { pm: tabPm, ind: tabInd, seg: tabSegm, obj: tabObj }[S.ptab](id);
+  const camps = Object.keys(CAMPS).map((k) => '<option value="' + k + '"' + (k === id ? " selected" : "") + ">" + esc(CAMPS[k].name) + "</option>").join("");
+  return '<h1 class="pg">Parámetros</h1><p class="sub">Se guardan en esta computadora y se aplican al instante.</p><div class="row"><span class="mu">Campaña:</span><select data-chg="pcamp" aria-label="Campaña">' + camps + '</select><button class="btn s" data-act="prestore">Restaurar valores por defecto</button><span class="mu sm">' + esc(S.pmsg) + "</span></div>" +
+    (isStale(id) ? '<div class="cd" style="border-color:var(--wn)"><b>Hay cambios de cálculo sin reprocesar.</b> Los resultados de esta campaña son del cálculo anterior. <button class="btn s p" data-act="reproc" data-id="' + id + '">Reprocesar</button></div>' : "") +
+    '<div class="tabs">' + tabs.map((t) => '<button class="' + (S.ptab === t[0] ? "on" : "") + '" data-act="ptab" data-v="' + t[0] + '">' + t[1] + "</button>").join("") + "</div>" + body;
+}
+
+/* ===================== Configuración, Novedades, Acerca de ===================== */
+function viewConfig() {
+  const tabs = [["conexion", "Conexión y rutas"], ["correo", "Correo y comentario"], ["camps", "Campañas"]]; let body;
+  if (S.ctab === "conexion") body = '<div class="cd"><div class="frm"><label>Conexión SQL</label><div class="row" style="margin:0"><input type="text" data-cfg="sql" value="' + esc(CFG.sql) + '" style="flex:1"><button class="btn" data-act="test">Test</button></div><label>Crudos Front</label><input type="text" data-cfg="rf" value="' + esc(CFG.rf) + '"><label>Crudos mensuales</label><input type="text" data-cfg="rm" value="' + esc(CFG.rm) + '"></div><div class="help">Si vacía la cadena SQL o las rutas, las conexiones SQL y Red se deshabilitan en las tarjetas de campaña. La demo no se conecta a ninguna base ni lee ninguna carpeta.</div><div class="row"><button class="btn p" data-act="simul" data-m="Configuración guardada (simulado en la demo)">Guardar</button></div></div>';
+  else if (S.ctab === "correo") body = '<div class="cd"><div class="frm"><label>Cliente de correo</label><select data-cfg="mail">' + ["Outlook", "Otro cliente"].map((o) => "<option" + (CFG.mail === o ? " selected" : "") + ">" + o + "</option>").join("") + '</select><label>Comentario</label><select data-cfg="cmt"><option value="estable"' + (CFG.cmt === "estable" ? " selected" : "") + '>Estable</option><option value="beta"' + (CFG.cmt === "beta" ? " selected" : "") + ">Nuevo (beta)</option></select></div><div class=\"help\">El comentario del correo se genera de forma local con reglas simples. «Nuevo (beta)» agrega diagnóstico por franja.</div></div>";
+  else body = '<div class="cd"><table class="fm"><thead><tr><th>Campaña</th><th>Plataforma</th><th>Tipo</th><th>Grupo</th><th>Color</th></tr></thead><tbody>' + Object.keys(CAMPS).map((k) => { const C = CAMPS[k]; return "<tr><td><b>" + esc(C.name) + "</b></td><td>" + esc(C.plat) + "</td><td>" + (C.type === "front" ? "Llamadas" : C.type === "rrss" ? "Redes sociales" : "Postventa") + "</td><td>Grupo " + C.grp + '</td><td><span class="logo" style="display:inline-flex;width:18px;height:18px;vertical-align:middle;background:' + C.brand + '"></span></td></tr>'; }).join("") + "</tbody></table></div>";
+  return '<h1 class="pg">Configuración</h1><p class="sub">Conexión, rutas y correo.</p><div class="tabs">' + tabs.map((t) => '<button class="' + (S.ctab === t[0] ? "on" : "") + '" data-act="ctab" data-v="' + t[0] + '">' + t[1] + "</button>").join("") + "</div>" + body;
+}
+function viewNews() {
+  return '<h1 class="pg">Novedades</h1><p class="sub">Historial de cambios de la maqueta.</p>' + CHANGELOG.map((e) => '<div class="cl"><div class="cht" style="background:' + e.c + '">' + esc(e.t) + "</div>" + e.it.map((x) => '<div class="cli"><span class="bdg" style="background:' + (BADGE[x[0]] || "#555") + '">' + x[0] + "</span><span>" + esc(x[1]) + "</span></div>").join("") + "</div>").join("");
+}
+function viewAbout() {
+  const row = (l, v) => "<tr><td class=\"b\" style=\"width:170px\">" + l + "</td><td>" + v + "</td></tr>";
+  return '<h1 class="pg">Acerca de</h1><div class="cd"><table class="fm" style="max-width:620px"><tbody>' + row("Nombre", "Postmortem Hub") + row("Versión", VER) + row("Estado", "Demo con datos ficticios") + row("Maqueta creada por", "Axel Hernán González") + row("Copyright", "© 2026 Axel Hernán González") + '</tbody></table><div class="row" style="margin-top:12px"><button class="btn" data-act="simul" data-m="Está en la última versión (' + VER + ') — no hay versiones publicadas">Buscar actualizaciones</button></div><p class="help">Maqueta visual: no usa datos reales ni se conecta a ningún sistema. Reconstruye con datos ficticios la experiencia de un sistema de postmortem mensual que en su versión real se desarrolló en equipo.</p></div>';
+}
+
+/* ===================== Modales y tooltips ===================== */
+function openModal(h) { $("#mbox").innerHTML = h; $("#modal").classList.add("on"); }
+function closeModal() { $("#modal").classList.remove("on"); S.cal = null; }
+function calHTML() {
+  const cs = S.cal, first = new Date(cs.y, cs.m, 1), lim = lastOp(), start = (first.getDay() + 6) % 7, days = new Date(cs.y, cs.m + 1, 0).getDate();
+  let g = ["L", "M", "M", "J", "V", "S", "D"].map((d) => '<div class="h">' + d + "</div>").join(""); for (let i = 0; i < start; i++) g += "<div></div>";
+  for (let d = 1; d <= days; d++) { const dt = new Date(cs.y, cs.m, d, 12); g += '<button data-act="calpick" data-v="' + dt.getTime() + '"' + (dt > lim ? " disabled" : "") + (fdate(dt) === fdate(S.date) ? ' class="on"' : "") + ">" + d + "</button>"; }
+  return '<h3>Fecha del reporte</h3><div class="row"><button class="btn s" data-act="calprev">◀</button><b style="flex:1;text-align:center">' + MES[cs.m] + " " + cs.y + '</b><button class="btn s" data-act="calnext">▶</button></div><div class="cal">' + g + '</div><div class="help">No se admiten fechas posteriores al último día operativo. Esc cierra.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-act="closeM">Cerrar</button></div>';
+}
+function draftHTML(id) {
+  const ids = Object.keys(S.res), r = S.res[id], sent = S.sd[id] && fdate(S.sd[id]) === fdate(r.date);
+  const sel = '<select data-chg="dcamp" aria-label="Campaña">' + ids.map((x) => '<option value="' + x + '"' + (x === id ? " selected" : "") + ">" + esc(CAMPS[x].name) + "</option>").join("") + "</select>";
+  return '<h3>Borrador de correo</h3><div class="row">' + sel + "</div>" + mailHTML(id, r, true) + '<div class="help">Después de enviar el borrador desde su cliente de correo, «Enviado hasta» se actualiza. En la demo puede simularlo con el botón de abajo.</div><div class="row" style="justify-content:flex-end"><button class="btn" data-act="closeM">Cerrar</button><button class="btn p" data-act="sent" data-id="' + id + '"' + (sent ? " disabled" : "") + ">" + (sent ? "Ya figura como enviado" : "Simular envío manual") + "</button></div>";
+}
+function mapHTML(id) {
+  const p = P[id], opts = (cur) => p.lobs.map((l) => "<option" + (cur === l ? " selected" : "") + ">" + esc(l) + "</option>").join("") + '<option value="__none__">— no cuenta —</option>';
+  return "<h3>Mapeo de roster → LOB</h3><p class=\"help\">Asigna cada grupo del roster al LOB de la campaña " + esc(CAMPS[id].name) + ".</p><table class=\"fm\"><thead><tr><th>Grupo del roster</th><th>LOB</th></tr></thead><tbody>" + Object.keys(p.rmap).map((g) => "<tr><td>" + esc(g) + '</td><td><select data-rm="' + esc(g) + '">' + opts(p.rmap[g]) + "</select></td></tr>").join("") + '</tbody></table><div class="row" style="justify-content:flex-end"><button class="btn p" data-act="closeM">Listo</button></div>';
+}
+function reprocHTML(id) {
+  return "<h3>Cambió un parámetro de cálculo</h3><p>Los días ya calculados de " + esc(CAMPS[id].name) + ' se calcularon con la configuración anterior. ¿Reprocesarlos ahora?</p><div class="row" style="justify-content:flex-end"><button class="btn" data-act="closeM">Ahora no</button><button class="btn p" data-act="reprocyes" data-id="' + id + '">Reprocesar</button></div>';
+}
+function weekTip(id, wd) {
+  const t = today(), cur = (t.getDay() + 6) % 7, tg = (wd + 6) % 7, p = P[id];
+  const sec = (off, title) => {
+    const d = new Date(t); d.setDate(t.getDate() - cur + tg + off * 7); const past = d < t && fdate(d) !== fdate(t);
+    return '<div class="tt">' + title + " · " + fdate(d) + "</div>" + p.lobs.map((l, li) => { const h = schedFor(id, li, wd); return '<div class="tr"><span>' + esc(l) + "</span><span>" + (h || (past ? "no trabajó" : "sin datos todavía")) + "</span></div>"; }).join("");
+  };
+  return sec(-1, "Semana −1") + sec(0, "Semana actual");
+}
+
+
+/* ===================== Cáscara y registro ===================== */
+function render() {
+  document.documentElement.setAttribute("data-theme", S.theme);
+  $("#nav").innerHTML = NAVS.map((g) => (g[0] ? '<div class="cap">' + g[0] + "</div>" : "") + g[1].map((n) => '<div class="ni' + (S.view === n[0] ? " on" : "") + '" data-act="nav" data-v="' + n[0] + '" role="button" tabindex="0"><span class="ic">' + n[1] + "</span><span>" + n[2] + "</span></div>").join("")).join("");
+  $("#thb").textContent = S.theme === "dark" ? "Modo claro" : "Modo oscuro"; $("#ver").textContent = VER;
+  const ct = $("#ct"), top = ct.scrollTop, fn = { hub: viewHub, params: viewParams, config: viewConfig, news: viewNews, about: viewAbout }[S.view];
+  try { ct.innerHTML = fn(); } catch (e) { ct.innerHTML = '<div class="cd"><b>No se pudo abrir.</b> ' + esc(e && e.name) + " — ver el registro.</div>"; logLine("er", "Error al dibujar la vista: " + (e && e.message)); }
+  ct.scrollTop = top; $("#dock").classList.toggle("col", !S.logOpen);
+}
+function renderLog() {
+  const b = $("#logb"), rows = S.logs.filter((l) => S.lvl === "all" || l.type === "wn" || l.type === "er");
+  b.innerHTML = rows.length ? rows.map((l) => '<div><span class="t">' + l.t + '</span> <span class="' + l.type + '">' + esc(l.msg) + "</span></div>").join("") : '<div class="t">Sin registros para mostrar.</div>'; b.scrollTop = b.scrollHeight;
+}
+function logLine(type, msg) {
+  const n = new Date(); S.logs.push({ t: pad(n.getHours()) + ":" + pad(n.getMinutes()) + ":" + pad(n.getSeconds()), type: type, msg: msg }); if (S.logs.length > 300) S.logs.shift(); renderLog();
+}
+let tt; function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("on"), 2600); }
+function setPath(obj, path, val) { let o = obj; for (let i = 0; i < path.length - 1; i++) { if (o[path[i]] == null || typeof o[path[i]] !== "object") o[path[i]] = {}; o = o[path[i]]; } o[path[path.length - 1]] = val; }
+
+/* ===================== Procesos simulados ===================== */
+function consultar(quiet) {
+  const tg = lastOp(); S.consulted = true;
+  Object.keys(CAMPS).forEach((id) => { const C = CAMPS[id]; if (!S.dd[id]) S.dd[id] = opMinus(tg, C.lag); if (!S.sd[id]) S.sd[id] = opMinus(tg, C.lag + C.sent); });
+  logLine("step", "Consultando «Datos hasta» de " + Object.keys(CAMPS).length + " campañas…"); logLine("ok", "Semáforo actualizado respecto del último día operativo (" + fdate(tg) + ").");
+  if (!quiet) toast("Datos consultados."); render();
+}
+function procesar(ids) {
+  const sel = ids || Object.keys(CAMPS).filter((id) => S.sel[id] && S.grp[CAMPS[id].grp]);
+  if (!sel.length) { toast("Sin selección: haga clic en una o más campañas."); logLine("wn", "Procesar sin campañas seleccionadas."); return; }
+  if (S.busy) return;
+  S.busy = true; sel.forEach((id) => { S.run[id] = "run"; }); render(); let t = 0;
+  sel.forEach((id) => {
+    const C = CAMPS[id], p = P[id], L = (ms, type, msg) => setTimeout(() => logLine(type, msg), t + ms);
+    L(0, "step", C.name + ": iniciando procesamiento del " + fdate(S.date));
+    L(250, "info", "Conexión: " + p.conn + (C.modes ? " · modo " + (p.mode === "inter" ? "interacciones + línea de tiempo" : "crudo clásico") : ""));
+    L(550, "step", "Ingesta: leyendo crudos de interacciones y estados de agente…");
+    if (C.noRoster) { L(900, "er", "Roster vacío para la campaña y la semana pedidas: se corta antes de calcular."); const tt0 = t; setTimeout(() => { S.run[id] = "er"; S.run[id + "_msg"] = "No hay agentes en el roster para la campaña y la semana pedidas."; render(); }, tt0 + 1000); t += 1100; return; }
+    L(900, "info", "Plan de dotación (OU) cargado: 26 franjas · " + p.lobs.length + " LOB");
+    L(1200, "step", "Cálculo: razón de sumas por fecha × LOB…");
+    const t0 = t;
+    setTimeout(() => { const r = buildResult(id, S.date); S.res[id] = r; S.rcamp = id; S.run[id] = "ok"; delete S.run[id + "_msg"]; S.dd[id] = new Date(S.date); logLine("ok", "Excel generado: MES (" + r.mes.length + " filas) y DIA (" + r.dia.length + " filas)."); logLine("ok", "Tablero Delivery generado (PNG)."); logLine("ok", "Borrador de correo preparado: no se envía solo."); render(); }, t0 + 1500);
+    t += 1800;
+  });
+  setTimeout(() => { S.busy = false; render(); toast("Procesamiento terminado."); }, t + 100);
+}
+function reprocesar(id) {
+  if (!S.res[id]) { procesar([id]); return; }
+  S.res[id] = buildResult(id, S.res[id].date); logLine("ok", CAMPS[id].name + ": reprocesado con los parámetros actuales."); toast("Reprocesado."); render();
+}
+
+/* ===================== Acciones ===================== */
+function moveMonth(dir) {
+  const d = new Date(S.date), day = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + dir); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+  const lim = lastOp(); S.date = d > lim ? lim : d; render();
+}
+function act(a, el) {
+  const v = el.dataset ? el.dataset.v : "", id = el.dataset ? el.dataset.id : "", p = P[S.pcamp];
+  switch (a) {
+    case "nav": S.view = v; S.pmsg = ""; render(); $("#ct").scrollTop = 0; $("#sb").classList.remove("open"); break;
+    case "theme": S.theme = S.theme === "dark" ? "light" : "dark"; render(); break;
+    case "log": S.logOpen = !S.logOpen; render(); break;
+    case "logclr": S.logs = []; renderLog(); break;
+    case "logcp": try { if (navigator.clipboard) navigator.clipboard.writeText(S.logs.map((l) => l.t + " " + l.msg).join("\n")); } catch (e) { /* sin portapapeles */ } toast("Registro copiado al portapapeles."); break;
+    case "grp": if (S.grp[v] && !S.grp[v === "1" ? 2 : 1]) { toast("Debe quedar al menos un grupo activo."); break; } S.grp[v] = !S.grp[v]; render(); break;
+    case "filt": S.filt = S.filt === v ? "all" : v; render(); break;
+    case "sel": S.sel[id] = !S.sel[id]; render(); break;
+    case "selall": { const vis = visCamps(); vis.forEach((x) => { S.sel[x] = el.checked; }); render(); break; }
+    case "consult": consultar(); break;
+    case "proc": procesar(); break;
+    case "reproc": reprocesar(id); break;
+    case "send": { const ids = Object.keys(S.res).filter((x) => S.sel[x]); if (!ids.length) { toast("Procese al menos una campaña seleccionada."); break; } S.dcamp = ids[0]; openModal(draftHTML(ids[0])); break; }
+    case "draft": S.dcamp = id; openModal(draftHTML(id)); break;
+    case "sent": S.sd[id] = new Date(S.res[id].date); logLine("ok", CAMPS[id].name + ": envío registrado (simulado). «Enviado hasta» actualizado."); $("#mbox").innerHTML = draftHTML(id); render(); break;
+    case "conn": P[id].conn = v; saveP(); render(); break;
+    case "mode": P[id].mode = v; saveP(); render(); break;
+    case "rtab": S.rtab = v; render(); break;
+    case "dprev": moveMonth(-1); break;
+    case "dnext": moveMonth(1); break;
+    case "cal": S.cal = { y: S.date.getFullYear(), m: S.date.getMonth() }; openModal(calHTML()); break;
+    case "calprev": S.cal.m--; if (S.cal.m < 0) { S.cal.m = 11; S.cal.y--; } $("#mbox").innerHTML = calHTML(); break;
+    case "calnext": S.cal.m++; if (S.cal.m > 11) { S.cal.m = 0; S.cal.y++; } $("#mbox").innerHTML = calHTML(); break;
+    case "calpick": { const d = new Date(+v); d.setHours(12, 0, 0, 0); S.date = d; closeModal(); render(); break; }
+    case "closeM": closeModal(); render(); break;
+    case "simul": toast(el.dataset.m); break;
+    case "test": toast(CFG.sql.trim() ? "Conexión exitosa (simulada: la demo no se conecta a ninguna base)." : "La cadena de conexión SQL no puede estar vacía."); break;
+    case "ptab": S.ptab = v; S.pmsg = ""; render(); break;
+    case "ctab": S.ctab = v; render(); break;
+    case "prestore": P[S.pcamp] = defP(S.pcamp); saveP(); S.pmsg = "Valores por defecto restaurados."; render(); break;
+    case "savepm": saveP(); if (isStale(S.pcamp)) openModal(reprocHTML(S.pcamp)); else { S.pmsg = "Postmortem guardado."; toast("Postmortem guardado."); render(); } break;
+    case "reprocyes": closeModal(); reprocesar(id); break;
+    case "rmap": openModal(mapHTML(S.pcamp)); break;
+    case "addlob": { let n = 1; while (p.lobs.indexOf("LOB nuevo " + n) >= 0) n++; const nm = "LOB nuevo " + n; p.lobs.push(nm); p.qmap[lobQueue(nm, 1)] = nm; p.rmap["Grupo de roster " + (Object.keys(p.rmap).length + 1)] = nm; saveP(); S.pmsg = "LOB agregado."; render(); break; }
+    case "dellob": { const i = +el.dataset.i, nm = p.lobs[i]; if (p.lobs.length < 2) break; p.lobs.splice(i, 1); [p.qmap, p.rmap].forEach((m) => Object.keys(m).forEach((k) => { if (m[k] === nm) m[k] = null; })); saveP(); S.pmsg = "LOB eliminado."; render(); break; }
+  }
+}
+function onChange(e) {
+  const t = e.target, id = S.pcamp, ds = t.dataset || {};
+  if (ds.pp) {
+    const path = JSON.parse(ds.pp); let val = t.type === "checkbox" ? t.checked : t.value;
+    if (ds.num) { val = parseFloat(String(val).replace(",", ".")); if (!isFinite(val)) { S.pmsg = "Valor numérico inválido."; render(); return; } }
+    setPath(P[id], path, val); saveP(); S.pmsg = "Cambio guardado."; render(); return;
+  }
+  if (ds.lobi != null) {
+    const p = P[id], i = +ds.lobi, old = p.lobs[i], nv = t.value.trim();
+    if (!nv) { S.pmsg = "El nombre del LOB no puede estar vacío."; render(); return; }
+    if (p.lobs.some((l, k) => k !== i && l.toLowerCase() === nv.toLowerCase())) { S.pmsg = "Ya existe un LOB con ese nombre."; render(); return; }
+    p.lobs[i] = nv; [p.qmap, p.rmap].forEach((m) => Object.keys(m).forEach((k) => { if (m[k] === old) m[k] = nv; })); saveP(); S.pmsg = "LOB renombrado."; render(); return;
+  }
+  if (ds.q) { P[id].qmap[ds.q] = t.value === "__none__" ? null : t.value; saveP(); S.pmsg = "Cola reasignada."; render(); return; }
+  if (ds.rm) { P[id].rmap[ds.rm] = t.value === "__none__" ? null : t.value; saveP(); toast("Mapeo guardado."); return; }
+  if (ds.cfg) { CFG[ds.cfg] = t.value; Object.keys(CAMPS).forEach((k) => { if (!connOk(P[k].conn)) P[k].conn = "Local"; }); saveP(); render(); return; }
+  switch (ds.chg) {
+    case "pcamp": S.pcamp = t.value; S.pmsg = ""; render(); break;
+    case "rcamp": S.rcamp = t.value; render(); break;
+    case "dcamp": S.dcamp = t.value; $("#mbox").innerHTML = draftHTML(t.value); break;
+    case "lvl": S.lvl = t.value; renderLog(); break;
+  }
+}
+
+/* ===================== Tooltip semanal ===================== */
+let tipT;
+function showTip(el, x, y) { const k = el.dataset.wl.split(":"), tip = $("#tip"); tip.innerHTML = weekTip(k[0], +k[1]); tip.style.display = "block"; const w = tip.offsetWidth; tip.style.left = Math.max(8, Math.min(x, window.innerWidth - w - 12)) + "px"; tip.style.top = (y + 16) + "px"; }
+const hideTip = () => { clearTimeout(tipT); $("#tip").style.display = "none"; };
+
+/* ===================== Arranque ===================== */
+function parseHash() {
+  const q = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if (q.get("th")) S.theme = q.get("th") === "dark" ? "dark" : "light";
+  if (q.get("v")) S.view = q.get("v");
+  if (q.get("c") && CAMPS[q.get("c")]) S.pcamp = q.get("c");
+  if (q.get("t")) { if (S.view === "params") S.ptab = q.get("t"); if (S.view === "config") S.ctab = q.get("t"); }
+  if (q.get("rt")) S.rtab = q.get("rt");
+  return q;
+}
+function boot() {
+  loadP(); S.date = lastOp(); const q = parseHash();
+  document.addEventListener("click", (e) => { const el = e.target.closest("[data-act]"); if (el && !el.disabled) act(el.dataset.act, el); });
+  document.addEventListener("change", onChange);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("ni")) { e.preventDefault(); act("nav", e.target); } });
+  document.addEventListener("mouseover", (e) => { const el = e.target.closest ? e.target.closest("[data-wl]") : null; if (!el) return; clearTimeout(tipT); const x = e.clientX, y = e.clientY; tipT = setTimeout(() => showTip(el, x, y), 350); });
+  document.addEventListener("mouseout", (e) => { const el = e.target.closest ? e.target.closest("[data-wl]") : null; if (el) hideTip(); });
+  document.addEventListener("focusin", (e) => { const el = e.target.closest ? e.target.closest("[data-wl]") : null; if (el) { const r = el.getBoundingClientRect(); showTip(el, r.left, r.bottom - 12); } });
+  document.addEventListener("focusout", hideTip);
+  $("#modal").addEventListener("click", (e) => { if (e.target.id === "modal") closeModal(); });
+  logLine("step", "Postmortem Hub listo. Demo visual con datos ficticios."); render();
+  if (q.get("noauto") == null) { consultar(true); S.sel.A = true; S.sel.E = true; render(); procesar(); }
+}
+boot();
+})();
+
+</script>
+</body>
+</html>

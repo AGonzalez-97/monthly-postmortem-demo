@@ -1,0 +1,31 @@
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores y herramientas locales
+.vscode/
+.idea/
+*.swp
+.claude/
+.codegraph/
+.gga
+
+# Variables de entorno y secretos (esta demo no usa ninguno)
+.env
+.env.*
+!.env.example
+
+# Datos y exportes: esta demo genera todo en el navegador y no los necesita
+*.csv
+*.xlsx
+*.xls
+*.ods
+*.sqlite
+*.db
+*.bak
+
+# Temporales
+*.log
+*.tmp
+node_modules/
