@@ -1,5 +1,10 @@
 # Postmortem Hub — demo visual de un hub de reportes de cierre para contact center
 
+![Demo](https://img.shields.io/badge/Demo-datos%20ficticios-F2B63C)
+![Stack](https://img.shields.io/badge/Stack-HTML%20%C2%B7%20CSS%20%C2%B7%20JS-E34F26?logo=html5&logoColor=white)
+![Dependencias](https://img.shields.io/badge/Dependencias-ninguna-59E08A)
+![Licencia](https://img.shields.io/badge/Licencia-MIT-blue)
+
 > **Demo visual con datos ficticios.** Ningún número, nombre o identificador de este repositorio corresponde a un cliente, campaña o sistema real.
 
 Maqueta navegable de un hub de **postmortem mensual** para varias campañas de contact center. El analista elige la fecha, procesa las campañas y obtiene tres entregables: un **tablero** para pegar en el correo, un **Excel** con las hojas `MES` y `DIA`, y un **borrador de correo** con un comentario analítico. El sistema nunca envía solo: siempre abre un borrador para que lo revise una persona.
