@@ -118,15 +118,17 @@ table.fm th{color:var(--mu);font-size:11px;text-transform:uppercase;letter-spaci
 #logb{flex:1;overflow:auto;padding:8px 12px;font:11px/1.55 var(--fm)}
 #logb .t{color:#7C88A8}#logb .step{color:#6FA8FF}#logb .ok{color:#3CC48A}#logb .wn{color:#F0B429}#logb .er{color:#E0564A;font-weight:700}
 .empty{padding:34px 10px;text-align:center;color:var(--mu)}
-#burger{display:none}
+#mbar{display:none}
 @media (max-width:1250px){.cg{grid-template-columns:repeat(3,minmax(0,1fr))}.grid2,.frm{grid-template-columns:1fr}}
 @media (max-width:960px){
   #app{grid-template-columns:minmax(0,1fr)}
   #sb{position:fixed;left:0;top:28px;bottom:0;width:260px;z-index:50;transform:translateX(-100%);transition:transform .2s}
-  #sb.open{transform:none}#burger{display:inline-block;margin-bottom:10px}
+  #sb.open{transform:none;box-shadow:0 0 0 100vmax rgba(0,0,0,.45)}
+  #mbar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20;padding:8px 14px;background:var(--bg,#F5F3EE);border-bottom:1px solid var(--bd,#ddd)}
+  #mbar .btn{padding:8px 14px;font-weight:700}
   .cg{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media (max-width:620px){.cg{grid-template-columns:1fr}#ct{padding:18px 14px}}
+@media (max-width:620px){.cg{grid-template-columns:1fr}#ct{padding:18px 14px}.tb .kc{grid-template-columns:repeat(3,1fr)}.tb{padding:10px}}
 
 #dock{margin-top:14px;flex:1;min-height:130px;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.16);border-radius:8px;overflow:hidden;background:#08122A}
 #dock.col{flex:none;min-height:0}#dock.col #logb{display:none}
@@ -153,6 +155,7 @@ table.fm th{color:var(--mu);font-size:11px;text-transform:uppercase;letter-spaci
       <div class="v" id="ver"></div>
     </div>
   </aside>
+  <div id="mbar"><button class="btn" id="burger" data-act="burger" aria-label="Abrir menú y registro de actividad" aria-expanded="false">☰ Menú</button><span class="mu">Postmortem Hub</span></div>
   <main id="ct"></main>
 </div>
 <div id="tip"></div>
@@ -581,6 +584,7 @@ function act(a, el) {
   const v = el.dataset ? el.dataset.v : "", id = el.dataset ? el.dataset.id : "", p = P[S.pcamp];
   switch (a) {
     case "nav": S.view = v; S.pmsg = ""; render(); $("#ct").scrollTop = 0; $("#sb").classList.remove("open"); break;
+    case "burger": { const o = $("#sb").classList.toggle("open"); $("#burger").setAttribute("aria-expanded", o); break; }
     case "theme": S.theme = S.theme === "dark" ? "light" : "dark"; render(); break;
     case "log": S.logOpen = !S.logOpen; render(); break;
     case "logclr": S.logs = []; renderLog(); break;
@@ -658,7 +662,7 @@ function parseHash() {
 }
 function boot() {
   loadP(); S.date = lastOp(); const q = parseHash();
-  document.addEventListener("click", (e) => { const el = e.target.closest("[data-act]"); if (el && !el.disabled) act(el.dataset.act, el); });
+  document.addEventListener("click", (e) => { if (!e.target.closest("#sb,#burger")) $("#sb").classList.remove("open"); const el = e.target.closest("[data-act]"); if (el && !el.disabled) act(el.dataset.act, el); });
   document.addEventListener("change", onChange);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("ni")) { e.preventDefault(); act("nav", e.target); } });
   document.addEventListener("mouseover", (e) => { const el = e.target.closest ? e.target.closest("[data-wl]") : null; if (!el) return; clearTimeout(tipT); const x = e.clientX, y = e.clientY; tipT = setTimeout(() => showTip(el, x, y), 350); });
