@@ -77,6 +77,14 @@ Parámetros opcionales en la URL, útiles para enlazar una vista concreta:
 
 HTML, CSS y JavaScript sin librerías ni paso de compilación.
 
+## Contexto y método
+
+Esta demo reproduce, con datos ficticios, el tipo de herramienta que desarrollé para un entorno laboral real (el código real es privado).
+
+- **Punto de partida.** Es la misma necesidad que dio origen a mi panel de reportes operativos, pero sobre un proceso todavía más pesado: el cierre acumulado del mes, con muchos más datos y comparaciones entre meses, era muy costoso de sostener en Excel.
+- **Enfoque.** Trabajar sobre los mismos archivos crudos con Python en lugar de fórmulas encadenadas, para que sumar una línea de negocio o un indicador no implique reescribir hojas enteras. Nació por iniciativa propia y se desarrolló con asistencia de IA.
+- **Validación.** La lógica del Excel fue la referencia: se migró con ayuda de IA y se controló contra ese Excel. Los cambios se revisaron con operaciones y gerencia antes de llegar al cliente.
+
 ## Decisiones de diseño
 
 - **Razón de sumas.** Todos los porcentajes son suma de numeradores sobre suma de denominadores, nunca un promedio de porcentajes.
